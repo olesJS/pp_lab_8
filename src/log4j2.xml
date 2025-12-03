@@ -8,12 +8,13 @@
         </File>
 
         <SMTP name="EmailAppender"
-              subject="КРИТИЧНА ПОМИЛКА: [Салати]"
-              to="admin@example.com" from="alerts@app.com"
-              smtpHost="smtp.gmail.com" smtpPort="587"
-              smtpUsername="your_smtp_username"
-              smtpPassword="your_app_password" smtpProtocol="smtp"
+              subject="CRITICAL ERROR: Салати"
+              to="my_2_email@gmail.com" from="my_1_email@gmail.com"
+              smtpHost="smtp.gmail.com" smtpPort="465"
+              smtpUsername="my_1_email@gmail.com"
+              smtpPassword="app_pass" smtpProtocol="smtps"
               bufferSize="1">
+            <Property name="mail.smtp.starttls.enable">true</Property>
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"/>
             <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
         </SMTP>
