@@ -10,10 +10,14 @@ import salad.SaladIngredient;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Отримувач (Receiver) для всієї логіки, пов'язаної з каталогом салатів
  */
 public class SaladService {
+    private static final Logger logger = LogManager.getLogger(SaladService.class);
 
     private final SaladRepository saladRepository;
     private final ProductRepository productRepository;
@@ -23,15 +27,19 @@ public class SaladService {
         this.saladRepository = sRepo;
         this.productRepository = pRepo;
         this.scanner = scanner;
+        logger.info("SaladService ініціалізовано. Репозиторії: SaladRepo={}, ProductRepo={}",
+                sRepo.getClass().getSimpleName(), pRepo.getClass().getSimpleName());
     }
 
     private double calculateTotalCalories(Salad salad) {
+        logger.debug("Розрахунок загальної калорійності для салату '{}'", salad.getName());
         return salad.getIngredients().stream()
                 .mapToDouble(SaladIngredient::getTotalCalories)
                 .sum();
     }
 
     private double calculateTotalWeight(Salad salad) {
+        logger.debug("Розрахунок загальної ваги для салату '{}'", salad.getName());
         return salad.getIngredients().stream()
                 .mapToDouble(SaladIngredient::getWeightInGrams)
                 .sum();
@@ -41,14 +49,17 @@ public class SaladService {
      * Створює новий, порожній салат та зберігає його.
      */
     public void createNewSalad() {
+        logger.info("Запущено операцію: Створення нового салату.");
         System.out.print("\n--- Створення салату ---\nВведіть назву нового салату: ");
         String name = scanner.nextLine().trim();
 
         if (name.isEmpty()) {
+            logger.warn("Створення салату скасовано: Назва порожня.");
             System.out.println("Назва не може бути порожньою.");
             return;
         }
         if (saladRepository.getSaladByName(name).isPresent()) {
+            logger.warn("Створення салату скасовано: Рецепт '{}' вже існує.", name);
             System.out.println("Рецепт '" + name + "' вже існує.");
             return;
         }
@@ -57,6 +68,7 @@ public class SaladService {
         saladRepository.saveSalad(newSalad);
 
         System.out.println("Салат '" + name + "' створено та збережено.");
+        logger.info("Салат '{}' успішно створено та збережено.", name);
 
         handleEditLoop(newSalad);
     }
@@ -65,12 +77,15 @@ public class SaladService {
      * Відображає список усіх збережених рецептів.
      */
     public void viewSalads() {
+        logger.info("Користувач переглядає список усіх рецептів.");
         List<Salad> salads = saladRepository.getAllSalads();
         if (salads.isEmpty()) {
+            logger.info("Список рецептів порожній.");
             System.out.println("Наразі немає збережених рецептів.");
             return;
         }
 
+        logger.info("Знайдено {} рецептів для відображення.", salads.size());
         System.out.println("\n--- Наявні рецепти салатів ---");
         for (int i = 0; i < salads.size(); i++) {
             Salad salad = salads.get(i);
@@ -84,14 +99,18 @@ public class SaladService {
      * Видаляє рецепт за назвою.
      */
     public void removeSalad() {
+        logger.info("Запущено операцію: Видалення рецепту.");
         System.out.print("\nВведіть назву салату для видалення: ");
         String name = scanner.nextLine().trim();
+        logger.debug("Назва для видалення: '{}'", name);
 
         if (saladRepository.getSaladByName(name).isPresent()) {
             saladRepository.deleteSalad(name);
             System.out.println("Рецепт '" + name + "' успішно видалено.");
+            logger.info("Рецепт '{}' успішно видалено.", name);
         } else {
             System.out.println("Рецепт '" + name + "' не знайдено.");
+            logger.error("Помилка видалення: Рецепт '{}' не знайдено.", name);
         }
     }
 
@@ -99,8 +118,10 @@ public class SaladService {
      * Детальний перегляд складу рецепту.
      */
     public void viewSaladRecipe() {
+        logger.info("Запущено операцію: Детальний перегляд рецепту.");
         System.out.print("\nВведіть назву салату для детального перегляду: ");
         String name = scanner.nextLine().trim();
+        logger.debug("Назва рецепту для перегляду: '{}'", name);
 
         Optional<Salad> saladOpt = saladRepository.getSaladByName(name);
 
@@ -108,6 +129,9 @@ public class SaladService {
             Salad salad = saladOpt.get();
             double totalCals = calculateTotalCalories(salad);
             double totalWeight = calculateTotalWeight(salad);
+
+            logger.info("Відкриття рецепту '{}'. Загальна вага: {} г, Калорійність: {} ккал",
+                    name, String.format("%.2f", totalWeight), String.format("%.2f", totalCals));
 
             System.out.println("\n--- Рецепт: " + salad.getName().toUpperCase() + " ---");
             System.out.println("Загальна калорійність: " + String.format("%.2f ккал", totalCals));
@@ -134,6 +158,7 @@ public class SaladService {
             }
         } else {
             System.out.println("Рецепт '" + name + "' не знайдено.");
+            logger.error("Помилка перегляду: Рецепт '{}' не знайдено.", name);
         }
     }
 
@@ -146,7 +171,6 @@ public class SaladService {
 
         while (editing) {
             System.out.println("\n--- Редагування: " + salad.getName().toUpperCase() + " ---");
-            // ... (виводимо поточний склад) ...
 
             System.out.println("1. Додати інгредієнт");
             System.out.println("2. Видалити інгредієнт");
@@ -163,21 +187,25 @@ public class SaladService {
                     break;
                 case "0":
                     saladRepository.saveSalad(salad);
+                    logger.info("Зміни в рецепті '{}' збережено.", salad.getName());
                     System.out.println("Зміни в рецепті '" + salad.getName() + "' збережено.");
                     editing = false;
                     break;
                 default:
+                    logger.warn("Невірний вибір дії редагування: {}", choice);
                     System.out.println("Невірний вибір.");
             }
         }
     }
 
     public void sortIngredients() {
+        logger.info("Запущено операцію: Сортування інгредієнтів.");
         System.out.print("\nВведіть назву салату для сортування інгредієнтів: ");
         String name = scanner.nextLine().trim();
         Optional<Salad> saladOpt = saladRepository.getSaladByName(name);
 
         if (saladOpt.isEmpty()) {
+            logger.error("Сортування скасовано: Рецепт '{}' не знайдено.", name);
             System.out.println("Рецепт '" + name + "' не знайдено.");
             return;
         }
@@ -187,6 +215,7 @@ public class SaladService {
         System.out.println("Сортувати за: 1. Назва | 2. Вага | 3. Ккал у порції");
         System.out.print("Ваш вибір: ");
         String choice = scanner.nextLine();
+        logger.debug("Критерій сортування: {}", choice);
 
         Comparator<SaladIngredient> comparator;
 
@@ -201,6 +230,7 @@ public class SaladService {
                 comparator = Comparator.comparingDouble(SaladIngredient::getTotalCalories);
                 break;
             default:
+                logger.warn("Невірний критерій сортування: {}", choice);
                 System.out.println("Невірний критерій сортування.");
                 return;
         }
@@ -208,18 +238,21 @@ public class SaladService {
         List<SaladIngredient> sortedList = new ArrayList<>(salad.getIngredients());
         sortedList.sort(comparator);
 
+        logger.info("Інгредієнти салату '{}' відсортовано за критерієм {}.", name, choice);
         System.out.println("\n--- Салат: " + salad.getName().toUpperCase() + " (Відсортовано) ---");
         sortedList.forEach(ing -> System.out.printf(" - %s (%.2f г) | Ккал: %.2f\n",
                 ing.getConsumable().getName(), ing.getWeightInGrams(), ing.getTotalCalories()));
     }
 
     private void handleAddIngredient(Salad salad) {
+        logger.info("Додавання інгредієнта до салату '{}'.", salad.getName());
         System.out.print("Введіть назву продукту: ");
         String productName = scanner.nextLine().trim();
 
         Optional<IProduct> productOpt = productRepository.getProductByName(productName);
 
         if (productOpt.isEmpty()) {
+            logger.warn("Продукт '{}' не знайдено в каталозі.", productName);
             System.out.println("Продукт '" + productName + "' не знайдено в каталозі.");
             return;
         }
@@ -227,22 +260,29 @@ public class SaladService {
         try {
             System.out.print("Введіть вагу в грамах (напр., 150): ");
             double weight = Double.parseDouble(scanner.nextLine());
+            logger.debug("Введено вагу: {} г", weight);
 
             SaladIngredient ingredient = new SaladIngredient(productOpt.get(), weight);
             salad.addIngredient(ingredient);
+            logger.info("Інгредієнт '{}' ({}г) успішно додано до салату '{}'.", productName, weight, salad.getName());
             System.out.println(productName + " (" + weight + "г) додано до салату.");
 
         } catch (NumberFormatException e) {
+            logger.warn("Помилка введення ваги: '{}' має бути числом.", e.getMessage());
             System.out.println("Помилка: Вага має бути числом.");
+        } catch (Exception e) {
+            logger.error("Критична помилка при додаванні інгредієнта: {}", e.getMessage(), e);
         }
     }
 
     private void handleRemoveIngredient(Salad salad) {
+        logger.info("Видалення інгредієнта із салату '{}'.", salad.getName());
         System.out.println("\n--- Наявні інгредієнти ---");
         salad.getIngredients().forEach(ing -> System.out.println(" > " + ing.getConsumable().getName()));
 
         System.out.print("Введіть назву інгредієнта для видалення: ");
         String productName = scanner.nextLine().trim();
+        logger.debug("Назва інгредієнта для видалення: '{}'", productName);
 
         Optional<SaladIngredient> ingredientToRemoveOpt = salad.getIngredients().stream()
                 .filter(ing -> ing.getConsumable().getName().equalsIgnoreCase(productName))
@@ -250,8 +290,10 @@ public class SaladService {
 
         if (ingredientToRemoveOpt.isPresent()) {
             salad.removeIngredient(ingredientToRemoveOpt.get());
+            logger.info("Інгредієнт '{}' успішно видалено із салату '{}'.", productName, salad.getName());
             System.out.println(productName + " видалено з рецепту.");
         } else {
+            logger.warn("Спроба видалення неіснуючого інгредієнта: '{}' у салаті '{}'.", productName, salad.getName());
             System.out.println("Інгредієнт '" + productName + "' не знайдено в цьому салаті.");
         }
     }
@@ -260,6 +302,7 @@ public class SaladService {
      * Сортує загальний список салатів за їх калорійністю.
      */
     public void sortSaladsByCalories() {
+        logger.info("Запущено операцію: Сортування всіх салатів за калорійністю.");
         List<Salad> salads = saladRepository.getAllSalads();
         if (salads.isEmpty()) {
             System.out.println("Немає рецептів для сортування.");
@@ -268,6 +311,7 @@ public class SaladService {
 
         salads.sort(Comparator.comparingDouble(this::calculateTotalCalories));
 
+        logger.info("Загальний список салатів відсортовано ({} шт.).", salads.size());
         System.out.println("\n--- Список салатів (Відсортовано за ккал) ---");
         for (int i = 0; i < salads.size(); i++) {
             Salad salad = salads.get(i);
@@ -280,11 +324,13 @@ public class SaladService {
      * Фільтрує овочі у складі салату за заданим діапазоном базової калорійності.
      */
     public void findVegetablesByCalories() {
+        logger.info("Запущено операцію: Фільтрація овочів у салаті за калорійністю.");
         System.out.print("\nВведіть назву салату для пошуку: ");
         String name = scanner.nextLine().trim();
         Optional<Salad> saladOpt = saladRepository.getSaladByName(name);
 
         if (saladOpt.isEmpty()) {
+            logger.error("Фільтрація скасована: Рецепт '{}' не знайдено.", name);
             System.out.println("Рецепт '" + name + "' не знайдено.");
             return;
         }
@@ -306,6 +352,7 @@ public class SaladService {
                     .collect(Collectors.toList());
 
             System.out.println("\n--- Результати пошуку в '" + salad.getName().toUpperCase() + "' ---");
+            logger.info("Фільтрація завершена. Знайдено {} овочів у діапазоні {}-{} ккал.", results.size(), minCal, maxCal);
             if (results.isEmpty()) {
                 System.out.println("Овочів у діапазоні " + minCal + "-" + maxCal + " ккал не знайдено.");
             } else {
@@ -313,6 +360,7 @@ public class SaladService {
                         ing.getConsumable().getName(), ing.getConsumable().getCaloriesPer100g()));
             }
         } catch (NumberFormatException e) {
+            logger.warn("Помилка введення: Межі калорійності мають бути числами.", e);
             System.out.println("Помилка введення: Межі калорійності мають бути числами.");
         }
     }

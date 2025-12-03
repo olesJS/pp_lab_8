@@ -1,0 +1,16 @@
+2025-12-03 20:57:51.359 [main] INFO  service.ProductService - ProductService ініціалізовано. Репозиторій: ProductRepository
+2025-12-03 20:58:02.035 [main] INFO  service.ProductService - Користувач переглядає каталог овочів.
+2025-12-03 21:07:05.111 [main] INFO  service.ProductService - Запущено операцію: Видалити овоч.
+2025-12-03 21:07:05.116 [main] INFO  service.ProductService - Користувач переглядає каталог овочів.
+2025-12-03 21:07:09.701 [main] ERROR service.ProductService - Помилка видалення: Овоч з назвою 'Овіч' не знайдено.
+2025-12-03 21:50:25.011 [main] INFO  saving.ProductRepository - ProductRepository ініціалізовано. Шлях до файлу: product_repo
+2025-12-03 21:50:25.016 [main] INFO  saving.SaladRepository - SaladRepository ініціалізовано. Шлях до даних: salad_repo
+2025-12-03 21:50:25.016 [main] INFO  saving.ProductRepository - Початок завантаження каталогу продуктів із product_repo.
+2025-12-03 21:50:25.025 [main] INFO  saving.ProductRepository - Завантаження завершено. Успішно завантажено 20 продуктів.
+2025-12-03 21:50:25.026 [main] INFO  saving.SaladRepository - Початок завантаження всіх рецептів із 'salad_repo'.
+2025-12-03 21:50:25.036 [main] INFO  saving.SaladRepository - Рецепт 'Грецький' успішно завантажено.
+2025-12-03 21:50:25.037 [main] INFO  saving.SaladRepository - Рецепт 'Весняний' успішно завантажено.
+2025-12-03 21:50:25.039 [main] INFO  saving.SaladRepository - Рецепт 'Цезар' успішно завантажено.
+2025-12-03 21:50:25.039 [main] INFO  saving.SaladRepository - Завантаження завершено. Загалом завантажено 3 рецептів.
+2025-12-03 21:50:25.047 [main] INFO  service.ProductService - ProductService ініціалізовано. Репозиторій: ProductRepository
+2025-12-03 21:50:25.049 [main] INFO  service.SaladService - SaladService ініціалізовано. Репозиторії: SaladRepo=SaladRepository, ProductRepo=ProductRepository
